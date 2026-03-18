@@ -1,0 +1,70 @@
+.timesheets-page {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.import-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.file-input-label {
+  cursor: pointer;
+}
+
+.timesheets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.timesheet-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  background: var(--content-bg);
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+}
+
+.timesheet-card__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.timesheet-card__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.timesheet-card__emp {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.timesheet-card__date {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.timesheet-card__times {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.timesheet-card__total {
+  font-size: 0.8rem;
+  color: var(--accent);
+  font-weight: 500;
+}

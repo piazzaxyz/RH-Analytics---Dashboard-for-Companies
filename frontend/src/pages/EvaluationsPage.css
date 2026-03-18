@@ -1,0 +1,99 @@
+.evaluations-page {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.evaluations-page .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.evaluations-page .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.evaluations-page .modal-content {
+  background: var(--card-bg);
+  border-radius: 16px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.evaluations-page .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.evaluations-page .modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.evaluations-page .modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  line-height: 1;
+}
+
+.evaluations-page .modal-close:hover {
+  color: var(--text-primary);
+}
+
+.evaluations-table {
+  overflow-x: auto;
+}
+
+.evaluations-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.evaluations-table th,
+.evaluations-table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.evaluations-table th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.evaluations-table tbody tr:hover {
+  background: var(--content-bg);
+}
+
+.eval-emp {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.eval-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--warning);
+}
