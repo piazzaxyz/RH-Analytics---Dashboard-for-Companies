@@ -1,19 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlalchemy.orm import Session
+
 from app.core.database import get_db
 from app.core.security import require_role
-from app.models.position import Position
 from app.models.ala import Ala
+from app.models.position import Position
 from app.models.user import User
-from typing import List, Optional
 
 router = APIRouter(prefix="/positions", tags=["positions"])
 
+
 @router.get("/")
 def list_positions(
-    ala_id: Optional[int] = None,
+    ala_id: int | None = None,
     db: Session = Depends(get_db),
-    user: User = Depends(require_role("admin", "gestor", "rh", "visualizador"))
+    user: User = Depends(require_role("admin", "gestor", "rh", "visualizador")),
 ):
     query = db.query(Position)
     if ala_id:
@@ -35,8 +36,11 @@ def list_positions(
         for p in positions
     ]
 
+
 @router.post("/")
-def create_position(data: dict = Body(...), db: Session = Depends(get_db), user: User = Depends(require_role("admin", "rh"))):
+def create_position(
+    data: dict = Body(...), db: Session = Depends(get_db), user: User = Depends(require_role("admin", "rh"))
+):
     title = str(data.get("title", "")).strip()
     if not title:
         raise HTTPException(status_code=400, detail="title é obrigatório")
@@ -65,8 +69,11 @@ def create_position(data: dict = Body(...), db: Session = Depends(get_db), user:
         "ala_id": getattr(position, "ala_id", None),
     }
 
+
 @router.put("/{id}")
-def update_position(id: int, data: dict = Body(...), db: Session = Depends(get_db), user: User = Depends(require_role("admin", "rh"))):
+def update_position(
+    id: int, data: dict = Body(...), db: Session = Depends(get_db), user: User = Depends(require_role("admin", "rh"))
+):
     position = db.query(Position).filter(Position.id == id).first()
     if not position:
         raise HTTPException(status_code=404, detail="Cargo não encontrado")
@@ -92,6 +99,7 @@ def update_position(id: int, data: dict = Body(...), db: Session = Depends(get_d
         "level": getattr(position, "level", None),
         "ala_id": getattr(position, "ala_id", None),
     }
+
 
 @router.delete("/{id}")
 def delete_position(id: int, db: Session = Depends(get_db), user: User = Depends(require_role("admin", "rh"))):

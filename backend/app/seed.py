@@ -1,9 +1,8 @@
-import os
 import datetime
 
-from app.core.database import SessionLocal, Base, engine
-from app.models import Employee, Department, Position, User
+from app.core.database import Base, SessionLocal, engine
 from app.core.security import get_password_hash
+from app.models import Department, Employee, Position, User
 
 # Garante criação das tabelas antes do seed
 Base.metadata.create_all(bind=engine)
@@ -27,8 +26,12 @@ with SessionLocal() as db:
 
     # Seed usuários
     if db.query(User).count() == 0:
-        admin = User(username="admin", email="admin@empresa.com", hashed_password=get_password_hash("admin123"), role="admin")
-        gestor = User(username="gestor", email="gestor@empresa.com", hashed_password=get_password_hash("gestor123"), role="gestor")
+        admin = User(
+            username="admin", email="admin@empresa.com", hashed_password=get_password_hash("admin123"), role="admin"
+        )
+        gestor = User(
+            username="gestor", email="gestor@empresa.com", hashed_password=get_password_hash("gestor123"), role="gestor"
+        )
         db.add_all([admin, gestor])
         db.commit()
 
@@ -56,7 +59,7 @@ with SessionLocal() as db:
             bank_account_type="corrente",
             photo_blob=None,
             salary=3000.0,
-            pis_pasep="12345678901"
+            pis_pasep="12345678901",
         )
         emp2 = Employee(
             full_name="Ciclano Silva",
@@ -80,7 +83,7 @@ with SessionLocal() as db:
             bank_account_type="corrente",
             photo_blob=None,
             salary=4000.0,
-            pis_pasep="10987654321"
+            pis_pasep="10987654321",
         )
         emp3 = Employee(
             full_name="Beltrano Souza",
@@ -104,7 +107,7 @@ with SessionLocal() as db:
             bank_account_type="corrente",
             photo_blob=None,
             salary=3500.0,
-            pis_pasep="11223344556"
+            pis_pasep="11223344556",
         )
         db.add_all([emp1, emp2, emp3])
         db.commit()

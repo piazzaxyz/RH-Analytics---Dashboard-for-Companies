@@ -1,0 +1,21 @@
+[project]
+name = "dashboard-rh-backend"
+version = "1.0.0"
+description = "Backend API para Dashboard RH"
+requires-python = ">=3.10"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+exclude = [".venv", "venv", "__pycache__", "seeds"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501", "F401", "F403"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", "venv"]
+skips = ["B101", "B106", "B110", "B608"]

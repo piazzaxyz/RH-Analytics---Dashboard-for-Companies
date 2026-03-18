@@ -1,13 +1,17 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum
+import enum
+
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 from app.core.database import Base
-import enum
+
 
 class TimesheetImportFormat(enum.Enum):
     csv = "csv"
     json = "json"
     pdf = "pdf"
+
 
 class TimesheetImport(Base):
     __tablename__ = "timesheet_imports"
