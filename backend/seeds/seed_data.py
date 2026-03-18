@@ -9,6 +9,7 @@ from app.core.database import SessionLocal, engine, Base
 from app.core.security import get_password_hash
 from app.models.user import User, UserRole
 from app.models.department import Department
+from app.models.ala import Ala
 from app.models.position import Position
 from app.models.employee import Employee, EmployeeStatus
 from app.models.timesheet import Timesheet, TimesheetStatus
@@ -69,19 +70,11 @@ def run_seed_minimal():
                 db.add(d)
             db.commit()
 
-        if db.query(Position).count() == 0:
-            positions = [
-                Position(title="Desenvolvedor", description="Desenvolvedor de Software", base_salary=6500, department_id=1),
-                Position(title="Analista RH", description="Analista de RH", base_salary=4500, department_id=2),
-                Position(title="Contador", description="Contador", base_salary=5500, department_id=3),
-                Position(title="Vendedor", description="Representante Comercial", base_salary=4000, department_id=4),
-                Position(title="Coordenador", description="Coordenador de Operações", base_salary=6000, department_id=5),
-            ]
-            for p in positions:
-                db.add(p)
-            db.commit()
+        if db.query(Ala).count() == 0:
+            from app.main import _seed_alas
+            _seed_alas(db)
 
-        print(f"Seed mínimo: {db.query(User).count()} usuários, {db.query(Department).count()} departamentos, {db.query(Position).count()} cargos.")
+        print(f"Seed mínimo: {db.query(User).count()} usuários, {db.query(Department).count()} departamentos, {db.query(Ala).count()} alas, {db.query(Position).count()} cargos.")
     finally:
         db.close()
 

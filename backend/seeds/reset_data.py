@@ -21,6 +21,7 @@ import app.models.timesheet
 import app.models.timesheet_import
 import app.models.employee
 import app.models.department
+import app.models.ala
 import app.models.position
 import app.models.user
 
@@ -38,7 +39,7 @@ def run_reset():
         with engine.connect() as conn:
             for table in ["audit_logs", "loan_installments", "loans", "evaluations", "documents",
                           "courses", "positions_history", "timesheet_imports", "timesheets",
-                          "payrolls", "employees", "positions", "departments", "users"]:
+                          "payrolls", "employees", "positions", "alas", "departments", "users"]:
                 try:
                     conn.execute(text(f"DELETE FROM {table}"))
                     conn.commit()
