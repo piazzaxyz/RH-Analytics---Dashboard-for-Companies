@@ -1,8 +1,11 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum
+import enum
+
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 from app.core.database import Base
-import enum
+
 
 class DocumentType(enum.Enum):
     rg = "rg"
@@ -10,6 +13,7 @@ class DocumentType(enum.Enum):
     diploma = "diploma"
     certificado = "certificado"
     outro = "outro"
+
 
 class Document(Base):
     __tablename__ = "documents"

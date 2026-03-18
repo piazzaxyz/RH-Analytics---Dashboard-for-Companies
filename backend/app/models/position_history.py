@@ -1,7 +1,9 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, ForeignKey
+from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 from app.core.database import Base
+
 
 class PositionHistory(Base):
     __tablename__ = "positions_history"
@@ -14,7 +16,9 @@ class PositionHistory(Base):
     end_date = Column(Date, nullable=True)
     reason = Column(String(255), nullable=False)
     created_at = Column(DateTime, server_default=func.current_timestamp(), nullable=False)
-    updated_at = Column(DateTime, server_default=func.current_timestamp(), onupdate=func.current_timestamp(), nullable=False)
+    updated_at = Column(
+        DateTime, server_default=func.current_timestamp(), onupdate=func.current_timestamp(), nullable=False
+    )
 
     employee = relationship("Employee")
     position = relationship("Position")

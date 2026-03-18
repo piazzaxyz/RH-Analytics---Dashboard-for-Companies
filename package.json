@@ -1,0 +1,16 @@
+{
+  "name": "dashboard-rh",
+  "private": true,
+  "scripts": {
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.10"
+  },
+  "lint-staged": {
+    "frontend/**/*.{ts,tsx,js,jsx,css,json}": [
+      "npx --prefix frontend biome check --write --files-ignore-unknown=true --no-errors-on-unmatched"
+    ]
+  }
+}

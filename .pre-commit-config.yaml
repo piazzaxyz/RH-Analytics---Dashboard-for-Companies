@@ -1,0 +1,54 @@
+# Pre-commit hooks for Dashboard-RH
+# Install: pre-commit install
+# Run manually: pre-commit run --all-files
+exclude: ^\.github/
+
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--unsafe]
+      - id: check-json
+      - id: check-toml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: detect-private-key
+      - id: debug-statements
+      - id: check-docstring-first
+        exclude: ^frontend/
+
+  # Ruff - Python linter and formatter (backend only)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.2
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        types_or: [python, pyi]
+        files: ^backend/
+      - id: ruff-format
+        types_or: [python, pyi]
+        files: ^backend/
+
+  # Bandit - Security checks (backend only)
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.8.2
+    hooks:
+      - id: bandit
+        args: ["-c", "backend/pyproject.toml"]
+        additional_dependencies: ["bandit[toml]"]
+        files: ^backend/
+
+  # Frontend: Biome runs via husky + lint-staged (see frontend/package.json)
+
+  # Commit message linting (optional - uncomment to enforce conventional commits)
+  # - repo: https://github.com/commitizen-tools/commitizen
+  #   rev: v4.1.1
+  #   hooks:
+  #     - id: commitizen
+  #       stages: [commit-msg]

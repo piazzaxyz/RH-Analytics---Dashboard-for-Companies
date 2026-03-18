@@ -1,13 +1,17 @@
-from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey, Enum
+import enum
+
+from sqlalchemy import Column, DateTime, Enum, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 from app.core.database import Base
-import enum
+
 
 class LoanInstallmentStatus(enum.Enum):
     pendente = "pendente"
     descontado = "descontado"
     atrasado = "atrasado"
+
 
 class LoanInstallment(Base):
     __tablename__ = "loan_installments"
@@ -19,6 +23,8 @@ class LoanInstallment(Base):
     amount = Column(Float, nullable=False)
     status = Column(Enum(LoanInstallmentStatus), nullable=False, default=LoanInstallmentStatus.pendente)
     created_at = Column(DateTime, server_default=func.current_timestamp(), nullable=False)
-    updated_at = Column(DateTime, server_default=func.current_timestamp(), onupdate=func.current_timestamp(), nullable=False)
+    updated_at = Column(
+        DateTime, server_default=func.current_timestamp(), onupdate=func.current_timestamp(), nullable=False
+    )
 
     loan = relationship("Loan")

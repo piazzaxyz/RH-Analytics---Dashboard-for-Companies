@@ -109,7 +109,7 @@ Na primeira execução, as tabelas são criadas automaticamente e as alas/cargos
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-O backend ficará em **http://localhost:8000**  
+O backend ficará em **http://localhost:8000**
 Documentação da API: **http://localhost:8000/docs**
 
 ---
@@ -209,6 +209,65 @@ python -m seeds.reset_data
 | `npm run dev` | Servidor de desenvolvimento |
 | `npm run build` | Build para produção |
 | `npm run preview` | Preview do build |
+| `npm run lint` | Verifica código com Biome |
+| `npm run lint:fix` | Corrige automaticamente com Biome |
+| `npm run format` | Formata código com Biome |
+
+---
+
+## Pre-commit e qualidade de código
+
+### Setup (após clonar)
+
+```bash
+# 1. Instalar dependências do root (husky + lint-staged) - configura os hooks
+npm install
+
+# 2. Instalar dependências do backend (inclui pre-commit)
+cd backend
+pip install -r requirements.txt
+
+# 3. Instalar dependências do frontend (inclui Biome)
+cd ../frontend
+npm install
+```
+
+O `npm install` na raiz executa o script `prepare` que configura o Husky. O hook `pre-commit` roda `pre-commit run` (backend) e `lint-staged` (frontend).
+
+**Importante:** O comando `pre-commit` precisa estar no PATH. Após instalar as dependências do backend (`pip install -r requirements.txt`), ative o venv antes de commitar, ou instale globalmente: `pip install pre-commit`.
+
+### O que roda no commit
+
+- **Backend:** Ruff (lint + format), Bandit (segurança), pre-commit-hooks (trailing whitespace, etc.)
+- **Frontend:** Biome (lint + format) via Husky + lint-staged
+
+### Comandos manuais
+
+```bash
+# Rodar todos os hooks em todos os arquivos
+pre-commit run --all-files
+
+# Rodar apenas Ruff no backend
+cd backend && ruff check . && ruff format .
+```
+
+### Conflito "Stashed changes conflicted with hook auto-fixes"
+
+Quando há alterações **não staged** nos mesmos arquivos que os hooks modificam, o pre-commit pode falhar ao restaurar o stash. Para evitar:
+
+1. **Opção A:** Faça `git add -A` antes de commitar (stage tudo)
+2. **Opção B:** Rode `pre-commit run --all-files` primeiro, depois `git add` os arquivos corrigidos e commite novamente
+
+### Corrigir erros do Ruff antes de commitar
+
+Se o Ruff falhar (ex.: tabs em vez de espaços), corrija manualmente:
+
+```bash
+cd backend
+ruff check . --fix
+ruff format .
+git add .
+```
 
 ---
 
