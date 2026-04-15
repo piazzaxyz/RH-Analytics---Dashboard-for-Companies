@@ -10,7 +10,7 @@ from app.models.department import Department
 from app.models.timesheet import Timesheet
 from app.core.config import Settings
 from typing import List
-from datetime import datetime, timedelta
+from datetime import datetime
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 settings = Settings()
@@ -34,8 +34,15 @@ def payroll_evolution(db: Session = Depends(get_db), user: User = Depends(requir
 	months = []
 	values = []
 	now = datetime.now()
+	year = now.year
+	month_num = now.month
 	for i in range(12):
-		month = (now - timedelta(days=30*i)).strftime("%Y-%m")
+		m = month_num - i
+		y = year
+		while m <= 0:
+			m += 12
+			y -= 1
+		month = f"{y}-{m:02d}"
 		total = db.query(Payroll).filter(Payroll.reference_month == month, Payroll.status == PayrollStatus.processado).with_entities(Payroll.net_salary).all()
 		values.append(sum([p[0] for p in total]))
 		months.append(month)

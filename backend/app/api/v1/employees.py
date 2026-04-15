@@ -41,42 +41,7 @@ def list_employees(
 	if search:
 		query = query.filter(Employee.full_name.ilike(f"%{search}%"))
 	employees = query.offset(skip).limit(limit).all()
-	result = []
-	for e in employees:
-		department = db.query(Department).filter(Department.id == e.department_id).first()
-		position = db.query(Position).filter(Position.id == e.position_id).first()
-		supervisor = db.query(Employee).filter(Employee.id == e.supervisor_id).first() if e.supervisor_id else None
-		result.append(EmployeeResponse(
-			id=e.id,
-			full_name=e.full_name,
-			cpf=e.cpf,
-			rg=e.rg,
-			birth_date=e.birth_date,
-			address=e.address,
-			phone=e.phone,
-			email=e.email,
-			work_card_number=e.work_card_number,
-			work_card_series=e.work_card_series,
-			admission_date=e.admission_date,
-			dismissal_date=e.dismissal_date,
-			status=e.status.value,
-			department_id=e.department_id,
-			department_name=department.name if department else "",
-			position_id=e.position_id,
-			position_title=position.title if position else "",
-			supervisor_id=e.supervisor_id,
-			supervisor_name=supervisor.full_name if supervisor else None,
-			bank_name=e.bank_name,
-			bank_agency=e.bank_agency,
-			bank_account=e.bank_account,
-			bank_account_type=e.bank_account_type,
-			photo_url=None,
-			salary=e.salary,
-			pis_pasep=e.pis_pasep,
-			created_at=e.created_at,
-			updated_at=e.updated_at
-		))
-	return result
+	return [_employee_to_response(e, db) for e in employees]
 
 @router.post("/", response_model=EmployeeResponse)
 def create_employee(
@@ -107,39 +72,7 @@ def create_employee(
 		db.rollback()
 		raise HTTPException(status_code=400, detail=str(e))
 	log_audit(db, user.id, "create", "employee", employee.id, None, data, "127.0.0.1")
-	department = db.query(Department).filter(Department.id == employee.department_id).first()
-	position = db.query(Position).filter(Position.id == employee.position_id).first()
-	supervisor = db.query(Employee).filter(Employee.id == employee.supervisor_id).first() if employee.supervisor_id else None
-	return EmployeeResponse(
-		id=employee.id,
-		full_name=employee.full_name,
-		cpf=employee.cpf,
-		rg=employee.rg,
-		birth_date=employee.birth_date,
-		address=employee.address,
-		phone=employee.phone,
-		email=employee.email,
-		work_card_number=employee.work_card_number,
-		work_card_series=employee.work_card_series,
-		admission_date=employee.admission_date,
-		dismissal_date=employee.dismissal_date,
-		status=employee.status.value,
-		department_id=employee.department_id,
-		department_name=department.name if department else "",
-		position_id=employee.position_id,
-		position_title=position.title if position else "",
-		supervisor_id=employee.supervisor_id,
-		supervisor_name=supervisor.full_name if supervisor else None,
-		bank_name=employee.bank_name,
-		bank_agency=employee.bank_agency,
-		bank_account=employee.bank_account,
-		bank_account_type=employee.bank_account_type,
-		photo_url=None,
-		salary=employee.salary,
-		pis_pasep=employee.pis_pasep,
-		created_at=employee.created_at,
-		updated_at=employee.updated_at
-	)
+	return _employee_to_response(employee, db)
 
 
 def _employee_to_response(e, db: Session) -> EmployeeResponse:
@@ -207,7 +140,9 @@ def list_documents(id: int, db: Session = Depends(get_db), user: User = Depends(
 @router.get("/{id}/payrolls", response_model=List[PayrollResponse])
 def list_payrolls(id: int, db: Session = Depends(get_db), user: User = Depends(require_role("admin", "gestor", "rh", "visualizador"))):
 	payrolls = db.query(Payroll).filter(Payroll.employee_id == id).all()
-	return [PayrollResponse(id=p.id, employee_id=p.employee_id, employee_name="", reference_month=p.reference_month,
+	emp = db.query(Employee).filter(Employee.id == id).first()
+	emp_name = emp.full_name if emp else ""
+	return [PayrollResponse(id=p.id, employee_id=p.employee_id, employee_name=emp_name, reference_month=p.reference_month,
 		base_salary=p.base_salary, overtime_50_value=p.overtime_50_value, overtime_100_value=p.overtime_100_value,
 		night_additional_value=p.night_additional_value, dsr_value=p.dsr_value, bonus_value=p.bonus_value,
 		hazard_pay=p.hazard_pay, unhealthy_pay=p.unhealthy_pay, gross_salary=p.gross_salary, inss_value=p.inss_value,
@@ -220,9 +155,14 @@ def list_payrolls(id: int, db: Session = Depends(get_db), user: User = Depends(r
 @router.get("/{id}/evaluations", response_model=List[EvaluationResponse])
 def list_evaluations(id: int, db: Session = Depends(get_db), user: User = Depends(require_role("admin", "gestor", "rh", "visualizador"))):
 	evals = db.query(Evaluation).filter(Evaluation.employee_id == id).all()
-	return [EvaluationResponse(id=e.id, employee_id=e.employee_id, employee_name="", evaluator_id=e.evaluator_id,
-		evaluator_name="", reference_month=e.reference_month, score=e.score, technical_score=e.technical_score,
-		behavioral_score=e.behavioral_score, notes=e.notes, action_plan=e.action_plan, status=e.status.value,
+	emp = db.query(Employee).filter(Employee.id == id).first()
+	emp_name = emp.full_name if emp else ""
+	evaluator_ids = list(set(e.evaluator_id for e in evals if e.evaluator_id))
+	evaluator_names = {u.id: u.username for u in db.query(User).filter(User.id.in_(evaluator_ids)).all()} if evaluator_ids else {}
+	return [EvaluationResponse(id=e.id, employee_id=e.employee_id, employee_name=emp_name, evaluator_id=e.evaluator_id,
+		evaluator_name=evaluator_names.get(e.evaluator_id, ""), reference_month=e.reference_month, score=e.score,
+		technical_score=e.technical_score, behavioral_score=e.behavioral_score, notes=e.notes,
+		action_plan=e.action_plan, status=e.status.value,
 		created_at=e.created_at, updated_at=e.updated_at) for e in evals]
 
 
@@ -231,39 +171,7 @@ def get_employee(id: int, db: Session = Depends(get_db), user: User = Depends(re
 	e = db.query(Employee).filter(Employee.id == id).first()
 	if not e:
 		raise HTTPException(status_code=404, detail="Colaborador não encontrado")
-	department = db.query(Department).filter(Department.id == e.department_id).first()
-	position = db.query(Position).filter(Position.id == e.position_id).first()
-	supervisor = db.query(Employee).filter(Employee.id == e.supervisor_id).first() if e.supervisor_id else None
-	return EmployeeResponse(
-		id=e.id,
-		full_name=e.full_name,
-		cpf=e.cpf,
-		rg=e.rg,
-		birth_date=e.birth_date,
-		address=e.address,
-		phone=e.phone,
-		email=e.email,
-		work_card_number=e.work_card_number,
-		work_card_series=e.work_card_series,
-		admission_date=e.admission_date,
-		dismissal_date=e.dismissal_date,
-		status=e.status.value,
-		department_id=e.department_id,
-		department_name=department.name if department else "",
-		position_id=e.position_id,
-		position_title=position.title if position else "",
-		supervisor_id=e.supervisor_id,
-		supervisor_name=supervisor.full_name if supervisor else None,
-		bank_name=e.bank_name,
-		bank_agency=e.bank_agency,
-		bank_account=e.bank_account,
-		bank_account_type=e.bank_account_type,
-		photo_url=None,
-		salary=e.salary,
-		pis_pasep=e.pis_pasep,
-		created_at=e.created_at,
-		updated_at=e.updated_at
-	)
+	return _employee_to_response(e, db)
 
 def _parse_date(val):
 	if val is None or val == "":
@@ -296,39 +204,7 @@ def update_employee(id: int, data: dict = Body(...), db: Session = Depends(get_d
 	db.commit()
 	db.refresh(e)
 	log_audit(db, user.id, "update", "employee", e.id, old_data, data, "127.0.0.1")
-	department = db.query(Department).filter(Department.id == e.department_id).first()
-	position = db.query(Position).filter(Position.id == e.position_id).first()
-	supervisor = db.query(Employee).filter(Employee.id == e.supervisor_id).first() if e.supervisor_id else None
-	return EmployeeResponse(
-		id=e.id,
-		full_name=e.full_name,
-		cpf=e.cpf,
-		rg=e.rg,
-		birth_date=e.birth_date,
-		address=e.address,
-		phone=e.phone,
-		email=e.email,
-		work_card_number=e.work_card_number,
-		work_card_series=e.work_card_series,
-		admission_date=e.admission_date,
-		dismissal_date=e.dismissal_date,
-		status=e.status.value,
-		department_id=e.department_id,
-		department_name=department.name if department else "",
-		position_id=e.position_id,
-		position_title=position.title if position else "",
-		supervisor_id=e.supervisor_id,
-		supervisor_name=supervisor.full_name if supervisor else None,
-		bank_name=e.bank_name,
-		bank_agency=e.bank_agency,
-		bank_account=e.bank_account,
-		bank_account_type=e.bank_account_type,
-		photo_url=None,
-		salary=e.salary,
-		pis_pasep=e.pis_pasep,
-		created_at=e.created_at,
-		updated_at=e.updated_at
-	)
+	return _employee_to_response(e, db)
 
 @router.delete("/{id}", response_model=EmployeeResponse)
 def delete_employee(id: int, db: Session = Depends(get_db), user: User = Depends(require_role("admin", "rh"))):
@@ -340,36 +216,4 @@ def delete_employee(id: int, db: Session = Depends(get_db), user: User = Depends
 	db.commit()
 	db.refresh(e)
 	log_audit(db, user.id, "delete", "employee", e.id, old_data, {"status": "inativo"}, "127.0.0.1")
-	department = db.query(Department).filter(Department.id == e.department_id).first()
-	position = db.query(Position).filter(Position.id == e.position_id).first()
-	supervisor = db.query(Employee).filter(Employee.id == e.supervisor_id).first() if e.supervisor_id else None
-	return EmployeeResponse(
-		id=e.id,
-		full_name=e.full_name,
-		cpf=e.cpf,
-		rg=e.rg,
-		birth_date=e.birth_date,
-		address=e.address,
-		phone=e.phone,
-		email=e.email,
-		work_card_number=e.work_card_number,
-		work_card_series=e.work_card_series,
-		admission_date=e.admission_date,
-		dismissal_date=e.dismissal_date,
-		status=e.status.value,
-		department_id=e.department_id,
-		department_name=department.name if department else "",
-		position_id=e.position_id,
-		position_title=position.title if position else "",
-		supervisor_id=e.supervisor_id,
-		supervisor_name=supervisor.full_name if supervisor else None,
-		bank_name=e.bank_name,
-		bank_agency=e.bank_agency,
-		bank_account=e.bank_account,
-		bank_account_type=e.bank_account_type,
-		photo_url=None,
-		salary=e.salary,
-		pis_pasep=e.pis_pasep,
-		created_at=e.created_at,
-		updated_at=e.updated_at
-	)
+	return _employee_to_response(e, db)

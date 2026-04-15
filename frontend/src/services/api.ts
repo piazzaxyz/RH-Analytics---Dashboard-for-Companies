@@ -32,8 +32,7 @@ api.interceptors.response.use(
     if (status === 401 && !isRedirecting && hadToken && !url.includes('/auth/login')) {
       const isTokenInvalid = detail.includes('token inválido');
       const isUserInactive = detail.includes('usuário não encontrado ou inativo');
-      const isDataRequest = url.includes('/employees') || url.includes('/departments') || url.includes('/positions') || url.includes('/payroll') || url.includes('/dashboard');
-      if ((isTokenInvalid || isUserInactive) && !isDataRequest) {
+      if (isTokenInvalid || isUserInactive) {
         isRedirecting = true;
         removeToken();
         window.location.replace('/login');

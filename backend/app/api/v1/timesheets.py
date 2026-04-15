@@ -101,7 +101,7 @@ def create_overtime(data: dict = Body(...), db: Session = Depends(get_db), user:
 		overtime_parecer=getattr(t, "overtime_parecer", None),
 		overtime_used=getattr(t, "overtime_used", None),
 		justification=None,
-		status="ok",
+		status=t.status.value if t.status else "ok",
 		created_at=t.created_at,
 		updated_at=t.updated_at
 	)
@@ -157,7 +157,7 @@ def import_timesheets(
 	return TimesheetImportResponse(
 		id=imp.id,
 		imported_by=imp.imported_by,
-		imported_by_name="",
+		imported_by_name=user.username,
 		filename=imp.filename,
 		format=imp.format.value,
 		records_imported=imp.records_imported,

@@ -15,6 +15,39 @@ from datetime import datetime
 router = APIRouter(prefix="/payroll", tags=["payroll"])
 settings = Settings()
 
+
+def _payroll_to_response(payroll, db: Session) -> PayrollResponse:
+	emp = db.query(Employee).filter(Employee.id == payroll.employee_id).first()
+	return PayrollResponse(
+		id=payroll.id,
+		employee_id=payroll.employee_id,
+		employee_name=emp.full_name if emp else "",
+		reference_month=payroll.reference_month,
+		base_salary=payroll.base_salary,
+		overtime_50_value=payroll.overtime_50_value,
+		overtime_100_value=payroll.overtime_100_value,
+		night_additional_value=payroll.night_additional_value,
+		dsr_value=payroll.dsr_value,
+		bonus_value=payroll.bonus_value,
+		hazard_pay=payroll.hazard_pay,
+		unhealthy_pay=payroll.unhealthy_pay,
+		gross_salary=payroll.gross_salary,
+		inss_value=payroll.inss_value,
+		irrf_value=payroll.irrf_value,
+		vt_discount=payroll.vt_discount,
+		vr_discount=payroll.vr_discount,
+		health_plan_discount=payroll.health_plan_discount,
+		loan_discount=payroll.loan_discount,
+		absence_discount=payroll.absence_discount,
+		alimony_discount=payroll.alimony_discount,
+		other_discounts=payroll.other_discounts,
+		net_salary=payroll.net_salary,
+		status=payroll.status.value,
+		processed_at=payroll.processed_at,
+		created_at=payroll.created_at,
+		updated_at=payroll.updated_at,
+	)
+
 @router.get("/", response_model=List[PayrollResponse])
 def list_payrolls(month: Optional[str] = None, db: Session = Depends(get_db), user: User = Depends(require_role("admin", "gestor", "rh", "visualizador"))):
 	query = db.query(Payroll)
@@ -39,35 +72,7 @@ def calculate_individual_payroll(employee_id: int, month: str, db: Session = Dep
 	db.commit()
 	db.refresh(payroll)
 	log_audit(db, user.id, "calculate_payroll", "payroll", payroll.id, None, {"month": month}, "127.0.0.1")
-	return PayrollResponse(
-		id=payroll.id,
-		employee_id=payroll.employee_id,
-		employee_name="",
-		reference_month=payroll.reference_month,
-		base_salary=payroll.base_salary,
-		overtime_50_value=payroll.overtime_50_value,
-		overtime_100_value=payroll.overtime_100_value,
-		night_additional_value=payroll.night_additional_value,
-		dsr_value=payroll.dsr_value,
-		bonus_value=payroll.bonus_value,
-		hazard_pay=payroll.hazard_pay,
-		unhealthy_pay=payroll.unhealthy_pay,
-		gross_salary=payroll.gross_salary,
-		inss_value=payroll.inss_value,
-		irrf_value=payroll.irrf_value,
-		vt_discount=payroll.vt_discount,
-		vr_discount=payroll.vr_discount,
-		health_plan_discount=payroll.health_plan_discount,
-		loan_discount=payroll.loan_discount,
-		absence_discount=payroll.absence_discount,
-		alimony_discount=payroll.alimony_discount,
-		other_discounts=payroll.other_discounts,
-		net_salary=payroll.net_salary,
-		status=payroll.status.value,
-		processed_at=payroll.processed_at,
-		created_at=payroll.created_at,
-		updated_at=payroll.updated_at
-	)
+	return _payroll_to_response(payroll, db)
 
 @router.post("/calculate-batch/{month}", response_model=List[PayrollResponse])
 def calculate_batch_payroll(month: str, db: Session = Depends(get_db), user: User = Depends(require_role("admin", "rh"))):
@@ -89,35 +94,7 @@ def calculate_batch_payroll(month: str, db: Session = Depends(get_db), user: Use
 			db.rollback()
 			raise HTTPException(status_code=500, detail=f"Erro ao processar folha do colaborador {e.id}: {str(ex)}")
 		log_audit(db, user.id, "calculate_payroll", "payroll", payroll.id, None, {"month": month}, "127.0.0.1")
-		payrolls.append(PayrollResponse(
-			id=payroll.id,
-			employee_id=payroll.employee_id,
-			employee_name="",
-			reference_month=payroll.reference_month,
-			base_salary=payroll.base_salary,
-			overtime_50_value=payroll.overtime_50_value,
-			overtime_100_value=payroll.overtime_100_value,
-			night_additional_value=payroll.night_additional_value,
-			dsr_value=payroll.dsr_value,
-			bonus_value=payroll.bonus_value,
-			hazard_pay=payroll.hazard_pay,
-			unhealthy_pay=payroll.unhealthy_pay,
-			gross_salary=payroll.gross_salary,
-			inss_value=payroll.inss_value,
-			irrf_value=payroll.irrf_value,
-			vt_discount=payroll.vt_discount,
-			vr_discount=payroll.vr_discount,
-			health_plan_discount=payroll.health_plan_discount,
-			loan_discount=payroll.loan_discount,
-			absence_discount=payroll.absence_discount,
-			alimony_discount=payroll.alimony_discount,
-			other_discounts=payroll.other_discounts,
-			net_salary=payroll.net_salary,
-			status=payroll.status.value,
-			processed_at=payroll.processed_at,
-			created_at=payroll.created_at,
-			updated_at=payroll.updated_at
-		))
+		payrolls.append(_payroll_to_response(payroll, db))
 	return payrolls
 
 @router.get("/{employee_id}/{month}", response_model=PayrollResponse)
@@ -125,35 +102,7 @@ def get_payroll(employee_id: int, month: str, db: Session = Depends(get_db), use
 	payroll = db.query(Payroll).filter(Payroll.employee_id == employee_id, Payroll.reference_month == month).first()
 	if not payroll:
 		raise HTTPException(status_code=404, detail="Folha não encontrada")
-	return PayrollResponse(
-		id=payroll.id,
-		employee_id=payroll.employee_id,
-		employee_name="",
-		reference_month=payroll.reference_month,
-		base_salary=payroll.base_salary,
-		overtime_50_value=payroll.overtime_50_value,
-		overtime_100_value=payroll.overtime_100_value,
-		night_additional_value=payroll.night_additional_value,
-		dsr_value=payroll.dsr_value,
-		bonus_value=payroll.bonus_value,
-		hazard_pay=payroll.hazard_pay,
-		unhealthy_pay=payroll.unhealthy_pay,
-		gross_salary=payroll.gross_salary,
-		inss_value=payroll.inss_value,
-		irrf_value=payroll.irrf_value,
-		vt_discount=payroll.vt_discount,
-		vr_discount=payroll.vr_discount,
-		health_plan_discount=payroll.health_plan_discount,
-		loan_discount=payroll.loan_discount,
-		absence_discount=payroll.absence_discount,
-		alimony_discount=payroll.alimony_discount,
-		other_discounts=payroll.other_discounts,
-		net_salary=payroll.net_salary,
-		status=payroll.status.value,
-		processed_at=payroll.processed_at,
-		created_at=payroll.created_at,
-		updated_at=payroll.updated_at
-	)
+	return _payroll_to_response(payroll, db)
 
 @router.get("/summary/{month}", response_model=List[dict])
 def payroll_summary(month: str, db: Session = Depends(get_db), user: User = Depends(require_role("admin", "gestor", "rh", "visualizador"))):
@@ -188,35 +137,7 @@ def update_payroll_bonus(id: int, data: dict = Body(...), db: Session = Depends(
 	db.commit()
 	db.refresh(payroll)
 	log_audit(db, user.id, "update_bonus", "payroll", payroll.id, None, {"bonus_value": bonus}, "127.0.0.1")
-	return PayrollResponse(
-		id=payroll.id,
-		employee_id=payroll.employee_id,
-		employee_name="",
-		reference_month=payroll.reference_month,
-		base_salary=payroll.base_salary,
-		overtime_50_value=payroll.overtime_50_value,
-		overtime_100_value=payroll.overtime_100_value,
-		night_additional_value=payroll.night_additional_value,
-		dsr_value=payroll.dsr_value,
-		bonus_value=payroll.bonus_value,
-		hazard_pay=payroll.hazard_pay,
-		unhealthy_pay=payroll.unhealthy_pay,
-		gross_salary=payroll.gross_salary,
-		inss_value=payroll.inss_value,
-		irrf_value=payroll.irrf_value,
-		vt_discount=payroll.vt_discount,
-		vr_discount=payroll.vr_discount,
-		health_plan_discount=payroll.health_plan_discount,
-		loan_discount=payroll.loan_discount,
-		absence_discount=payroll.absence_discount,
-		alimony_discount=payroll.alimony_discount,
-		other_discounts=payroll.other_discounts,
-		net_salary=payroll.net_salary,
-		status=payroll.status.value,
-		processed_at=payroll.processed_at,
-		created_at=payroll.created_at,
-		updated_at=payroll.updated_at
-	)
+	return _payroll_to_response(payroll, db)
 
 @router.post("/{id}/approve", response_model=PayrollResponse)
 def approve_payroll(id: int, db: Session = Depends(get_db), user: User = Depends(require_role("admin", "rh"))):
@@ -227,32 +148,4 @@ def approve_payroll(id: int, db: Session = Depends(get_db), user: User = Depends
 	db.commit()
 	db.refresh(payroll)
 	log_audit(db, user.id, "approve_payroll", "payroll", payroll.id, None, {"status": "processado"}, "127.0.0.1")
-	return PayrollResponse(
-		id=payroll.id,
-		employee_id=payroll.employee_id,
-		employee_name="",
-		reference_month=payroll.reference_month,
-		base_salary=payroll.base_salary,
-		overtime_50_value=payroll.overtime_50_value,
-		overtime_100_value=payroll.overtime_100_value,
-		night_additional_value=payroll.night_additional_value,
-		dsr_value=payroll.dsr_value,
-		bonus_value=payroll.bonus_value,
-		hazard_pay=payroll.hazard_pay,
-		unhealthy_pay=payroll.unhealthy_pay,
-		gross_salary=payroll.gross_salary,
-		inss_value=payroll.inss_value,
-		irrf_value=payroll.irrf_value,
-		vt_discount=payroll.vt_discount,
-		vr_discount=payroll.vr_discount,
-		health_plan_discount=payroll.health_plan_discount,
-		loan_discount=payroll.loan_discount,
-		absence_discount=payroll.absence_discount,
-		alimony_discount=payroll.alimony_discount,
-		other_discounts=payroll.other_discounts,
-		net_salary=payroll.net_salary,
-		status=payroll.status.value,
-		processed_at=payroll.processed_at,
-		created_at=payroll.created_at,
-		updated_at=payroll.updated_at
-	)
+	return _payroll_to_response(payroll, db)

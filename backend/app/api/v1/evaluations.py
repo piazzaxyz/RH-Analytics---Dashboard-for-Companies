@@ -14,6 +14,28 @@ from datetime import datetime
 router = APIRouter(prefix="/evaluations", tags=["evaluations"])
 settings = Settings()
 
+
+def _eval_to_response(e, db: Session) -> EvaluationResponse:
+	emp = db.query(Employee).filter(Employee.id == e.employee_id).first()
+	evaluator = db.query(User).filter(User.id == e.evaluator_id).first() if e.evaluator_id else None
+	return EvaluationResponse(
+		id=e.id,
+		employee_id=e.employee_id,
+		employee_name=emp.full_name if emp else "",
+		evaluator_id=e.evaluator_id,
+		evaluator_name=evaluator.username if evaluator else "",
+		evaluation_type=getattr(e, "evaluation_type", None),
+		reference_month=e.reference_month,
+		score=e.score,
+		technical_score=e.technical_score,
+		behavioral_score=e.behavioral_score,
+		notes=e.notes,
+		action_plan=e.action_plan,
+		status=e.status.value,
+		created_at=e.created_at,
+		updated_at=e.updated_at,
+	)
+
 @router.get("/", response_model=List[EvaluationResponse])
 def list_evaluations(
 	employee_id: Optional[int] = None,
@@ -27,24 +49,7 @@ def list_evaluations(
 	if month:
 		query = query.filter(Evaluation.reference_month == month)
 	evals = query.all()
-	emp_names = {e.id: e.full_name for e in db.query(Employee).filter(Employee.id.in_([x.employee_id for x in evals])).all()} if evals else {}
-	return [EvaluationResponse(
-		id=e.id,
-		employee_id=e.employee_id,
-		employee_name=emp_names.get(e.employee_id, ""),
-		evaluator_id=e.evaluator_id,
-		evaluator_name="",
-		evaluation_type=getattr(e, "evaluation_type", None),
-		reference_month=e.reference_month,
-		score=e.score,
-		technical_score=e.technical_score,
-		behavioral_score=e.behavioral_score,
-		notes=e.notes,
-		action_plan=e.action_plan,
-		status=e.status.value,
-		created_at=e.created_at,
-		updated_at=e.updated_at
-	) for e in evals]
+	return [_eval_to_response(e, db) for e in evals]
 
 @router.post("/", response_model=EvaluationResponse)
 def create_evaluation(data: dict = Body(...), db: Session = Depends(get_db), user: User = Depends(require_role("admin", "rh"))):
@@ -56,46 +61,14 @@ def create_evaluation(data: dict = Body(...), db: Session = Depends(get_db), use
 	db.commit()
 	db.refresh(e)
 	log_audit(db, user.id, "create_evaluation", "evaluation", e.id, None, data, "127.0.0.1")
-	return EvaluationResponse(
-		id=e.id,
-		employee_id=e.employee_id,
-		employee_name="",
-		evaluator_id=e.evaluator_id,
-		evaluator_name="",
-		evaluation_type=getattr(e, "evaluation_type", None),
-		reference_month=e.reference_month,
-		score=e.score,
-		technical_score=e.technical_score,
-		behavioral_score=e.behavioral_score,
-		notes=e.notes,
-		action_plan=e.action_plan,
-		status=e.status.value,
-		created_at=e.created_at,
-		updated_at=e.updated_at
-	)
+	return _eval_to_response(e, db)
 
 @router.get("/{id}", response_model=EvaluationResponse)
 def get_evaluation(id: int, db: Session = Depends(get_db), user: User = Depends(require_role("admin", "gestor", "rh", "visualizador"))):
 	e = db.query(Evaluation).filter(Evaluation.id == id).first()
 	if not e:
 		raise HTTPException(status_code=404, detail="Avaliação não encontrada")
-	return EvaluationResponse(
-		id=e.id,
-		employee_id=e.employee_id,
-		employee_name="",
-		evaluator_id=e.evaluator_id,
-		evaluator_name="",
-		evaluation_type=getattr(e, "evaluation_type", None),
-		reference_month=e.reference_month,
-		score=e.score,
-		technical_score=e.technical_score,
-		behavioral_score=e.behavioral_score,
-		notes=e.notes,
-		action_plan=e.action_plan,
-		status=e.status.value,
-		created_at=e.created_at,
-		updated_at=e.updated_at
-	)
+	return _eval_to_response(e, db)
 
 @router.put("/{id}", response_model=EvaluationResponse)
 def update_evaluation(id: int, data: dict, db: Session = Depends(get_db), user: User = Depends(require_role("admin", "rh"))):
@@ -108,23 +81,7 @@ def update_evaluation(id: int, data: dict, db: Session = Depends(get_db), user: 
 	db.commit()
 	db.refresh(e)
 	log_audit(db, user.id, "update_evaluation", "evaluation", e.id, old_data, data, "127.0.0.1")
-	return EvaluationResponse(
-		id=e.id,
-		employee_id=e.employee_id,
-		employee_name="",
-		evaluator_id=e.evaluator_id,
-		evaluator_name="",
-		evaluation_type=getattr(e, "evaluation_type", None),
-		reference_month=e.reference_month,
-		score=e.score,
-		technical_score=e.technical_score,
-		behavioral_score=e.behavioral_score,
-		notes=e.notes,
-		action_plan=e.action_plan,
-		status=e.status.value,
-		created_at=e.created_at,
-		updated_at=e.updated_at
-	)
+	return _eval_to_response(e, db)
 
 @router.post("/{id}/conclude", response_model=EvaluationResponse)
 def conclude_evaluation(id: int, db: Session = Depends(get_db), user: User = Depends(require_role("admin", "rh"))):
@@ -135,20 +92,4 @@ def conclude_evaluation(id: int, db: Session = Depends(get_db), user: User = Dep
 	db.commit()
 	db.refresh(e)
 	log_audit(db, user.id, "conclude_evaluation", "evaluation", e.id, None, {"status": "concluido"}, "127.0.0.1")
-	return EvaluationResponse(
-		id=e.id,
-		employee_id=e.employee_id,
-		employee_name="",
-		evaluator_id=e.evaluator_id,
-		evaluator_name="",
-		evaluation_type=getattr(e, "evaluation_type", None),
-		reference_month=e.reference_month,
-		score=e.score,
-		technical_score=e.technical_score,
-		behavioral_score=e.behavioral_score,
-		notes=e.notes,
-		action_plan=e.action_plan,
-		status=e.status.value,
-		created_at=e.created_at,
-		updated_at=e.updated_at
-	)
+	return _eval_to_response(e, db)

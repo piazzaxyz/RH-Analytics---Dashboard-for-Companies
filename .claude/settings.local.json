@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep \"employee_name=\\\\\"\\\\\"\" /c/Users/dudup/Desktop/Dashboard-RH/backend/app/api/v1/*.py)"
+    ]
+  }
+}
